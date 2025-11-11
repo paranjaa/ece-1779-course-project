@@ -77,8 +77,6 @@ app.put("/items/:id", async (req, res) => {
     //and the parts to change in the request
     const { name, quantity } = req.body;
 
-    
-
   try {
     // try getting the corresponding values in the database
     const result = await pool.query(
@@ -96,6 +94,28 @@ app.put("/items/:id", async (req, res) => {
   } catch (err) {
     //errors for if something else goes wrong
     console.error("Error updating item:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// delete, get rid of an item by ID
+app.delete("/items/:id", async (req, res) => {
+  
+  //get the item from postgresql  
+  const { id }  = req.params;
+
+  try {
+    //run a query
+    const result = await pool.query("DELETE FROM items WHERE id = $1", [id]);
+
+    //if there isn't a result in the response, there wasn't an item    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+    //if no error, then just send 204 (need to add in the Redis part next)
+    res.status(204).send();
+  } catch (err) {
+    console.error("Error deleting item:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
