@@ -70,6 +70,36 @@ app.post("/items", async (req, res) => {
   }
 });
 
+//Update, change an item by ID
+app.put("/items/:id", async (req, res) => {
+    //1. Retrieve the existing task from postgresql
+    const id = req.params.id;
+    //and the parts to change in the request
+    const { name, quantity } = req.body;
+
+    
+
+  try {
+    // try getting the corresponding values in the database
+    const result = await pool.query(
+      "UPDATE items SET name = $1, quantity = $2 WHERE id = $3 RETURNING *",
+      [name, quantity, id]
+    );
+    // if the query doesn't return a result with any rows, return an error
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+    
+    //if not, then pass in the new values    
+    res.json(result.rows[0]);
+    //need to add logic for partial updates, like with A2
+  } catch (err) {
+    //errors for if something else goes wrong
+    console.error("Error updating item:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 
 //adding this to get files from the subfolder
 //const path = require("path");
