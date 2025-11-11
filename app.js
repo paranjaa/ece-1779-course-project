@@ -33,6 +33,44 @@ app.get("/", async (req, res) => {
   }
 });
 
+//adding CRUD operations
+app.get("/items", async (req, res) => {
+  try {
+    //like the test page, get every item in the database
+    const result = await pool.query("SELECT * FROM items ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching items:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+
+//Add a new item
+app.post("/items", async (req, res) => {
+  // get the required files from the request  
+  const { name, quantity } = req.body;
+  if (!name) {
+    //make an error if they aren't there
+    return res.status(400).json({ error: "Item name is required" });
+  }
+
+  try {
+    //if they're present, make an SQL query with the pieces
+    const result = await pool.query(
+      "INSERT INTO items (name, quantity) VALUES ($1, $2) RETURNING *",
+      //default to 0 if not specified?
+      [name, quantity || 0]
+    );
+    //return the newly added item
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error adding item:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+
 //adding this to get files from the subfolder
 //const path = require("path");
 //app.use(express.static(path.join(__dirname, "public")));
