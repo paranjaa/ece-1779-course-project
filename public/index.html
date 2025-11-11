@@ -1,14 +1,29 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Testing</title>
+<title>Inventory Management</title>
 </head>
 
 <body>
+  <h1>Inventory</h1>
 
 
-<h1>This is the html page for the inventory system</h1>
-<p>Some other text</p>
+  <p>results from script go here<p>
+  <ul id="item-list"></ul>
+
+  
+
+
+  <h3>Add New Item</h3>
+  <form id="add-form">
+    <input type="text" id="name" placeholder="Item name" required />
+    <input type="number" id="quantity" placeholder="Quantity" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <script src="script.js"></script>
+
+
 
 </body>
 </html> 
