@@ -1,20 +1,6 @@
-# Use official Node.js image
-FROM node:latest
-
-# Set working directory
+FROM python:3.11
+ADD . /app
 WORKDIR /app
-
-# Copy dependency definitions
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy application code
-COPY . .
-
-# Expose port
-EXPOSE 3000
-
-# Run the application
-CMD ["npm", "start"]
+RUN pip install -r requirements.txt
+EXPOSE 5000
+CMD ["python", "-u", "app.py"]

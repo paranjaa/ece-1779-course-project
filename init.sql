@@ -1,11 +1,5 @@
-CREATE TABLE IF NOT EXISTS items (
+CREATE TABLE IF NOT EXISTS inventory (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 0
+    item_name TEXT NOT NULL UNIQUE,
+    item_quantity INTEGER NOT NULL
 );
-
--- Sample data
-INSERT INTO items (name, quantity)
-VALUES 
-  ('Apples', 10),
-  ('Oranges', 5);
