@@ -23,6 +23,11 @@ from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 from functools import wraps
 
+import threading
+import redis
+import json
+
+
 dictConfig({
     'version': 1,
     'formatters': {'default': {
@@ -61,6 +66,16 @@ def get_db_connection():
     )
     return conn
 
+
+def postgre_listener():
+    # connect listener to redis, just run this
+    r = redis.Redis(
+        host=os.environ['REDIS_HOST'],
+        port=os.environ['REDIS_PORT'],
+        decode_responses=True
+    )
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def require_login(f):
     @wraps(f)
