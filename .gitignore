@@ -2,3 +2,5 @@
 /venv/
 /.env
 app.js
+/api_secret.yaml
+/database_secret.yaml
