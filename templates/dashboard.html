@@ -42,11 +42,6 @@
         <input type="submit" value="Sort">
     </form>
 
-
-
-    
-
-
    {% if items %}
           <table>
               <tr>
@@ -70,10 +65,14 @@
                         {{ form.csrf_token }}
                       </form>
                       
-                      <form action="{{ url_for('delete_item', item_id=id) }}" method="post">
-                        <button type="submit">Delete</button>
-                        {{ form.csrf_token }}                    
-                      </form>
+
+                      {% if session.get('role') in ['admin', 'manager'] %}
+                        <form action="{{ url_for('delete_item', item_id=id) }}" method="post">
+                          <button type="submit">Delete</button>
+                          {{ form.csrf_token }}                    
+                        </form>
+                      {% endif %}
+
                   </td>
               </tr>
               {% endfor %}
@@ -82,14 +81,19 @@
         <p>No items found in inventory. :( </p>
   {% endif %}
 
-  <h3>Add an item</h3>
+    {% if session.get('role') in ['admin', 'manager'] %}
+  
+      <h3>Add an item</h3>
 
-  <form method="POST" action="/add_item">
-        {{ form.csrf_token }}
-        <input type="text" name="item_name" placeholder="Item name" required>
-        <input type="number" name="item_quantity" placeholder="Quantity" required>
-        <input type="submit" value="Add Item">
-  </form>
+      <form method="POST" action="/add_item">
+            {{ form.csrf_token }}
+            <input type="text" name="item_name" placeholder="Item name" required>
+            <input type="number" name="item_quantity" placeholder="Quantity" required>
+            <input type="submit" value="Add Item">
+      </form>
+
+    {% endif %}
+
 
 
   <p>Welcome {{session['role']}} {{ session['username'] }}<a href="{{ url_for('logout') }}"> Logout</a></p>
