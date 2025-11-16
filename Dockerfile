@@ -1,5 +1,5 @@
 FROM python:3.11
-ADD . /app
+ADD ./templates ./app.py ./forms.py ./utils.py ./requirements.txt /app/
 WORKDIR /app
 RUN pip install -r requirements.txt
 EXPOSE 5000
