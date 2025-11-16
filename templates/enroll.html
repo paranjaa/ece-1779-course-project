@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enrollment Page</title>
+</head>
+<body>
+    <h2>Enrollment Page</h2>
+    <form method="post">
+        {{ form.csrf_token }}
+        <label>Username:</label><input type="text" name="username" required><br>
+        <label>Password:</label><input type="password" name="password" required><br>
+        <p>
+            {{ form.role.label }}
+            {{ form.role() }}
+        </p>
+        <button type="submit">Sign Up</button>
+    </form>
+    <p><a href="{{ url_for('index') }}">Back to Index</a></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, msg in messages %}
+            <p class="{{ category }}">{{ msg }}</p>
+        {% endfor %}
+    {% endwith %}
+
+</body>
+</html>
+
