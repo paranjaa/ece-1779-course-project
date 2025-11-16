@@ -94,6 +94,11 @@
 
   <p>Welcome {{session['role']}} {{ session['username'] }}<a href="{{ url_for('logout') }}"> Logout</a></p>
 
+  {% if session['role'] == 'admin' %}
+    <p>
+      <a href="{{ url_for('enroll') }}"> Enroll other users</a>
+    </p>
+  {% endif %}
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
