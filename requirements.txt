@@ -2,4 +2,5 @@ psycopg==3.2.12
 Flask==3.1.2
 MarkupSafe==3.0.3
 python-dotenv==1.2.1
-Flask-WTF==1.2.2
+flask-wtf==1.2.2
+WTForms==3.2.1

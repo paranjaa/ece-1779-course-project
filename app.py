@@ -1,20 +1,25 @@
-from flask import Flask
-from flask import request, render_template, redirect, url_for, session
-from markupsafe import escape
-
-from dotenv import load_dotenv
-import psycopg
 import os
-
+import secrets
+from hashlib import sha512
 from logging.config import dictConfig
 
-from werkzeug.security import generate_password_hash, check_password_hash
-from functools import wraps
+import psycopg
+from dotenv import load_dotenv
+from flask import Flask
 from flask import flash
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import session
+from flask import url_for
+from flask_wtf import CSRFProtect
+from markupsafe import escape
 
-from flask_wtf import FlaskForm, CSRFProtect
-from wtforms import StringField, PasswordField
-from wtforms.validators import InputRequired
+from forms import LoginForm
+
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
+from functools import wraps
 
 
 
@@ -38,12 +43,8 @@ app = Flask(__name__)
 # Local development .env file
 if os.path.isfile("./.env"):
     load_dotenv()
-
-#for managing sessions
-#need to add this to env file
-app.secret_key = os.getenv('SECRET_KEY')  
-
-
+app.secret_key = os.environ["APP_SECRET_KEY"] if os.environ["APP_SECRET_KEY"] is not None else secrets.token_urlsafe(32)
+csrf = CSRFProtect(app)
 
 def get_db_connection():
     conn = psycopg.connect(
@@ -55,120 +56,6 @@ def get_db_connection():
     )
     return conn
 
-
-class SignupForm(FlaskForm):
-    username = StringField("username", validators=[InputRequired()])
-    password = PasswordField("password", validators=[InputRequired()])
-
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-
-    form = SignupForm()
-
-    #TODO: Add error checking for this, some way of making sure values are unique
-    # that and the user roles, but that's later
-    if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-
-        # store the user password as a hash rather than plain      
-        password_hash = generate_password_hash(password)
-
-
-        with get_db_connection() as conn:
-          with conn.cursor() as cur:
-            try:
-              cur.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
-                (username, password_hash)
-              )
-              conn.commit()
-              #if the form works, then take them to the login page
-              flash("Signed up successfully, please log in with new credientials", "Success")
-              return redirect(url_for('login'))
-            except Exception as e:
-              flash("Invalid username or password, or some other error", "error")
-              app.logger.error(f"Error signing up new user: {e}")
-
-    return render_template('signup.html', form=form)
-
-#enabling CSRF to secure forms
-#csrf = CSRFProtect(app)
-
-
-
-#@app.route('/login', methods=['GET', 'POST'])
-#def login():
-#
-#
-#    if request.method == 'POST':
-#        username = request.form['username']
-#        password = request.form['password']
-#
-#        with get_db_connection() as conn:
-#            with conn.cursor() as cur:
-#                cur.execute("SELECT id, password FROM users WHERE username = %s", (username,))
-#                cur.execute("SELECT id, password, role FROM users WHERE username = %s", (username,))
-#                user = cur.fetchone()
-#
-#        #check if the password entered matches the hash
-#        if user and check_password_hash(user[1], password):
-#            session['user_id'] = user[0]
-#            session['username'] = username
-#            session['role'] = user[2]
-#            flash("Login successful", "success")
-#            return redirect(url_for('index'))
-#        else:
-#            flash("Invalid username or password", "error")
-#            return redirect(url_for('login'))
-#          
-#    return render_template('login.html')
-
-
-class LoginForm(FlaskForm):
-    username = StringField("username", validators=[InputRequired()])
-    password = PasswordField("password", validators=[InputRequired()])
-
-
-
-#TODO: Add feedback, for success and failure. Figure out how to do this in python
-#and a corresponding one for logging in
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():  
-        username = form.username.data
-        password = form.password.data
-
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT id, password, role FROM users WHERE username = %s", (username,))
-                user = cur.fetchone()
-
-        #check if the password entered matches the hash
-        if user and check_password_hash(user[1], password):
-            session['user_id'] = user[0]
-            session['username'] = username
-            session['role'] = user[2]
-            flash("Login successful", "success")
-            return redirect(url_for('index'))
-        else:
-            flash("Invalid username or password", "error")
-            return redirect(url_for('login'))
-          
-    return render_template('login.html', form=form)
-
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash("logged out successfully", "info")
-    return redirect(url_for('login'))
-
-
-#also a function for preventing access to dashboard 
-#(and later, other pages) without logging in
 def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -191,41 +78,39 @@ def require_role(role):
         return decorated
     return wrapper
 
-
 class EmptyForm(FlaskForm):
     pass
 
-#adding a route for the inventory dashboard
 @app.route('/')
 @require_login
 def index():
-  #displays all items, so need to run that command first
+    #displays all items, so need to run that command first
 
-  #adding a parameter for what to sort by, default is by ID
-  #and another one for sorting order
+    #adding a parameter for what to sort by, default is by ID
+    #and another one for sorting order
 
-  #TODO: Add sorting by location and category as well
-  sort_by = request.args.get('sort_by', 'id')
-  #should default to ascending
-  order = request.args.get('order', 'asc') 
+    #TODO: Add sorting by location and category as well
+    sort_by = request.args.get('sort_by', 'id')
+    #should default to ascending
+    order = request.args.get('order', 'asc')
 
-  if sort_by not in ['item_name', 'item_quantity', 'id']:
-    sort_by = 'id' 
+    if sort_by not in ['item_name', 'item_quantity', 'id']:
+        sort_by = 'id'
 
-  if order not in ['asc', 'desc']:
-    #probably won't be invalid, just in case
-    order = 'asc'
+    if order not in ['asc', 'desc']:
+        #probably won't be invalid, just in case
+        order = 'asc'
 
-  with get_db_connection() as conn:
+    with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(f"SELECT id, item_name, item_quantity FROM inventory ORDER BY {sort_by} {order};")
             items = cur.fetchall()
 
 
-  #adding a blank form so it can at least load
-  form = EmptyForm()
+    #adding a blank form so it can at least load
+    form = EmptyForm()
 
-  return render_template('dashboard.html', items=items, sort_by=sort_by, order=order, form=form)
+    return render_template('dashboard.html', items=items, sort_by=sort_by, order=order, form=form)
 
 
 #adding a route for adding items from the dashboard
@@ -239,7 +124,7 @@ def add_item():
 
     if item_name and item_quantity:
         try:
-            # TODO: add error checking to this (duplicate names) (empty fields)            
+            # TODO: add error checking to this (duplicate names) (empty fields)
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
@@ -252,7 +137,7 @@ def add_item():
                         (item_name, item_quantity)
                     )
                     conn.commit()
-             
+
             app.logger.info(f"Added/updated item '{item_name}' with quantity {item_quantity}.")
         except Exception as e:
             app.logger.error(f"Error adding item: {e}")
@@ -266,159 +151,239 @@ def add_item():
 @require_login
 def delete_item(item_id):
     try:
-      with get_db_connection() as conn:
-        with conn.cursor() as cur:
-          # TODO: (verifying the item exists) (warnings for deleting an item)
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # TODO: (verifying the item exists) (warnings for deleting an item)
 
-          cur.execute("DELETE FROM inventory WHERE id = %s;", (item_id,))
+                cur.execute("DELETE FROM inventory WHERE id = %s;", (item_id,))
 
-          conn.commit()
-        app.logger.info(f"Deleted item with ID {item_id}")
+                conn.commit()
+            app.logger.info(f"Deleted item with ID {item_id}")
     except Exception as e:
-            app.logger.error(f"Error deleting item: {e}")
+        app.logger.error(f"Error deleting item: {e}")
     return redirect(url_for('index'))
 
 #adding routes for incrementing and decrementing items from the dashboard
 @app.route('/increment/<int:item_id>', methods=['POST'])
 @require_login
 def increment(item_id):
-  with get_db_connection() as conn:
-    with conn.cursor() as cur:
-      cur.execute(
-        "UPDATE inventory SET item_quantity = item_quantity + 1 WHERE id = %s RETURNING item_quantity;",
-        (item_id,)
-      )
-      result = cur.fetchone()
-      conn.commit()
-  app.logger.info(f"Incremented item {item_id} to {result[0]}")
-  return redirect(url_for('index'))
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE inventory SET item_quantity = item_quantity + 1 WHERE id = %s RETURNING item_quantity;",
+                (item_id,)
+            )
+            result = cur.fetchone()
+            conn.commit()
+    app.logger.info(f"Incremented item {item_id} to {result[0]}")
+    return redirect(url_for('index'))
 
 
 #same as other function
 @app.route('/decrement/<int:item_id>', methods=['POST'])
 @require_login
 def decrement(item_id):
-  with get_db_connection() as conn:
-    with conn.cursor() as cur:
-      cur.execute(
-        #additional check here to make sure that it doesn't set an item to a negative value
-        "UPDATE inventory SET item_quantity = GREATEST(item_quantity - 1, 0) WHERE id = %s RETURNING item_quantity;",
-        (item_id,)
-      )
-      result = cur.fetchone()
-      conn.commit()
-  app.logger.info(f"Decremented item {item_id} to {result[0]}")
-  return redirect(url_for('index'))
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                #additional check here to make sure that it doesn't set an item to a negative value
+                "UPDATE inventory SET item_quantity = GREATEST(item_quantity - 1, 0) WHERE id = %s RETURNING item_quantity;",
+                (item_id,)
+            )
+            result = cur.fetchone()
+            conn.commit()
+    app.logger.info(f"Decremented item {item_id} to {result[0]}")
+    return redirect(url_for('index'))
 
 
-#@app.route('/admin')
-#@require_login
-#def index():
-#    return "index"
+
+class SignupForm(FlaskForm):
+    username = StringField("username", validators=[InputRequired()])
+    password = PasswordField("password", validators=[InputRequired()])
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+
+    form = SignupForm()
+
+    #TODO: Add error checking for this, some way of making sure values are unique
+    # that and the user roles, but that's later
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+
+        # store the user password as a hash rather than plain
+        password_hash = generate_password_hash(password)
+
+
+        with get_db_connection() as conn:
+          with conn.cursor() as cur:
+            try:
+              cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, password_hash)
+              )
+              conn.commit()
+              #if the form works, then take them to the login page
+              flash("Signed up successfully, please log in with new credientials", "Success")
+              return redirect(url_for('login'))
+            except Exception as e:
+              flash("Invalid username or password, or some other error", "error")
+              app.logger.error(f"Error signing up new user: {e}")
+
+    return render_template('signup.html', form=form)
+
+class LoginForm(FlaskForm):
+    username = StringField("username", validators=[InputRequired()])
+    password = PasswordField("password", validators=[InputRequired()])
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = escape(form.username.data)
+        password = escape(form.password.data)
+
+        # check login credentials from the database
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT password, role FROM users
+                        WHERE username = %s
+                    """,
+                    (username,)
+                )
+                result = cur.fetchone()
+        if result and check_password_hash(result[1], password):
+            app.logger.info(f"{username} logged in.")
+            session['username'] = username
+            session['role'] = result[2]
+            flash("Login successful", "success")
+            return redirect(url_for("index"))
+        else:
+            app.logger.info("Failed login attempted.")
+            flash("Invalid username or password", "danger")
+            return render_template("login.html", form=form, error="Invalid username or password")
+    return render_template("login.html", form=form)
+
 
 @app.route('/inventory', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def inventory():
-    print(request)
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
+    app.logger.info(request)
+    # Only allow logged-in users to access this page
+    if "username" in session:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
 
-            if request.method == 'GET':
-                # SELECT - return the inventory
-                cur.execute(
-                    """
-                    SELECT * from inventory
-                    """
-                )
-                posts = cur.fetchall()
-                app.logger.info("Fetched all rows in inventory.")
-                return (str(posts), 200)
+                if request.method == 'GET':
+                    # SELECT - return the inventory
+                    cur.execute(
+                        """
+                        SELECT * from inventory
+                        """
+                    )
+                    posts = cur.fetchall()
+                    app.logger.info("Fetched all rows in inventory.")
+                    return (str(posts), 200)
 
-            elif request.method == 'POST':
-                # INSERT - insert a new item into the DB if it does not exist or
-                #          does nothing if it does exist
-                item_name = request.form.get("item_name")
-                item_quantity = request.form.get("item_quantity")
-                if (item_name is not None) and (item_quantity is not None):
-                    item_name = escape(item_name)
-                    item_quantity = escape(item_quantity)
-                    try:
+                elif request.method == 'POST':
+                    # INSERT - insert a new item into the DB if it does not exist or
+                    #          does nothing if it does exist
+                    item_name = request.form.get("item_name")
+                    item_quantity = request.form.get("item_quantity")
+                    if (item_name is not None) and (item_quantity is not None):
+                        item_name = escape(item_name)
+                        item_quantity = escape(item_quantity)
+                        try:
+                            cur.execute(
+                                """
+                                INSERT INTO inventory (item_name, item_quantity)
+                                    VALUES (%s, %s)
+                                    --ON CONFLICT (item_name) DO UPDATE SET 
+                                    --    item_quantity = inventory.item_quantity + excluded.item_quantity
+                                    RETURNING id;
+                                """,
+                                (item_name, item_quantity)
+                            )
+                        except psycopg.errors.lookup("23505") as e:
+                            # Uniqueness constraint violation
+                            # Attempting to insert an item with a name that has already been used
+                            app.logger.info(f"Did not insert non-unique item \"{item_name}\".")
+                            return ("Cannot POST an item that has already been INSERTED. Did you mean PUT?", 409)
+
+                        db_results = cur.fetchone()[0]
+                        app.logger.info(f"Inserted new entry with id \"{db_results}\", item name \"{item_name}\", and item quantity \"{item_quantity}\".")
+                        return (str(db_results), 201)
+
+                    else:
+                        app.logger.info("Missing item name or item quantity.")
+                        return ("Missing item name or item quantity.", 400)
+
+                elif request.method == 'PUT':
+                    # UPDATE - update an existing item in the DB by adding the new quantity to the
+                    #          current quantity
+                    item_name = request.form.get("item_name")
+                    item_quantity = request.form.get("item_quantity")
+                    if (item_name is not None) and (item_quantity is not None):
+                        item_name = escape(item_name)
+                        item_quantity = escape(item_quantity)
                         cur.execute(
                             """
-                            INSERT INTO inventory (item_name, item_quantity)
-                                VALUES (%s, %s)
-                                --ON CONFLICT (item_name) DO UPDATE SET 
-                                --    item_quantity = inventory.item_quantity + excluded.item_quantity
-                                RETURNING id;
+                            UPDATE inventory
+                                SET item_quantity = item_quantity + %s
+                                WHERE item_name = %s
+                                RETURNING *;
                             """,
-                            (item_name, item_quantity)
+                            (item_quantity, item_name)
                         )
-                    except psycopg.errors.lookup("23505") as e:
-                        # Uniqueness constraint violation
-                        # Attempting to insert an item with a name that has already been used
-                        app.logger.info(f"Did not insert non-unique item \"{item_name}\".")
-                        return ("Cannot POST an item that has already been INSERTED. Did you mean PUT?", 409)
+                        db_results = cur.fetchone()
+                        if db_results is not None:
+                            app.logger.info(f"Updated item \"{item_name}\" to new quantity \"{db_results[2]}\".")
+                            return (str(db_results), 200)
+                        else:
+                            app.logger.info(f"Item \"{item_name}\" does not exist.")
+                            return (f"Item \"{item_name}\" does not exist.", 404)
 
-                    db_results = cur.fetchone()[0]
-                    app.logger.info(f"Inserted new entry with id \"{db_results}\", item name \"{item_name}\", and item quantity \"{item_quantity}\".")
-                    return (str(db_results), 201)
-
-                else:
-                    app.logger.info("Missing item name or item quantity.")
-                    return ("Missing item name or item quantity.", 400)
-
-            elif request.method == 'PUT':
-                # UPDATE - update an existing item in the DB by adding the new quantity to the
-                #          current quantity
-                item_name = request.form.get("item_name")
-                item_quantity = request.form.get("item_quantity")
-                if (item_name is not None) and (item_quantity is not None):
-                    item_name = escape(item_name)
-                    item_quantity = escape(item_quantity)
-                    cur.execute(
-                        """
-                        UPDATE inventory
-                            SET item_quantity = item_quantity + %s
-                            WHERE item_name = %s
-                            RETURNING *;
-                        """,
-                        (item_quantity, item_name)
-                    )
-                    db_results = cur.fetchone()
-                    if db_results is not None:
-                        app.logger.info(f"Updated item \"{item_name}\" to new quantity \"{db_results[2]}\".")
-                        return (str(db_results), 200)
                     else:
-                        app.logger.info(f"Item \"{item_name}\" does not exist.")
-                        return (f"Item \"{item_name}\" does not exist.", 404)
+                        app.logger.info("Missing item name or item quantity.")
+                        return ("Missing item name or item quantity.", 400)
 
-                else:
-                    app.logger.info("Missing item name or item quantity.")
-                    return ("Missing item name or item quantity.", 400)
+                # Only allow managers to delete items from the DB
+                elif request.method == 'DELETE':
+                    if session["username"] == "manager":
+                        # DELETE - delete an existing item from the DB
+                        item_name = request.form.get("item_name")
 
-            elif request.method == 'DELETE':
-                # DELETE - delete an existing item from the DB
-                # TODO: Is this a behaviour we want though? We can either set the quantity to 0
-                #       and leave the name and id in place, or we can completely remove the entry
-                item_name = request.form.get("item_name")
-
-                if item_name is not None:
-                    item_name = escape(item_name)
-                    cur.execute(
-                        """
-                        DELETE FROM inventory
-                            WHERE item_name = %s;
-                        """,
-                        (item_name,)
-                    )
-                    if cur.rowcount > 0:
-                        app.logger.info(f"Item \"{item_name}\" has been deleted.")
-                        return ("", 204)
+                        if item_name is not None:
+                            item_name = escape(item_name)
+                            cur.execute(
+                                """
+                                DELETE FROM inventory
+                                    WHERE item_name = %s;
+                                """,
+                                (item_name,)
+                            )
+                            if cur.rowcount > 0:
+                                app.logger.info(f"Item \"{item_name}\" has been deleted.")
+                                return ("", 204)
+                            else:
+                                app.logger.info(f"Item \"{item_name}\" does not exist.")
+                                return (f"Item \"{item_name}\" does not exist.", 404)
+                        else:
+                            app.logger.info("Missing item name or item quantity.")
+                            return ("Missing item name or item quantity.", 400)
                     else:
-                        app.logger.info(f"Item \"{item_name}\" does not exist.")
-                        return (f"Item \"{item_name}\" does not exist.", 404)
-                else:
-                    app.logger.info("Missing item name or item quantity.")
-                    return ("Missing item name or item quantity.", 400)
+                        return ("Authorization required. Contact your manager to perform this action.", 403)
+    else:
+        return redirect(url_for("login"))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("Logged out successfully.", "info")
+    return redirect(url_for("index"))
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
