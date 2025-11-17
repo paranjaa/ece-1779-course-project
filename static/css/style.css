@@ -1,44 +1,129 @@
+/* global */
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
+    background: #f2f2f2;
     margin: 0;
-    padding: 40px;
+    padding: 20px;
 }
 
-h1 {
+/* headings */
+.page-title {
     text-align: center;
+    margin-bottom: 40px;
 }
 
-form {
-    max-width: 300px;
-    margin: auto;
+
+/* dashboard */
+
+.dashboard-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+/* sorting form */
+.card {
     background: white;
     padding: 20px;
-    border-radius: 6px;
-    box-shadow: 0px 2px 5px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
 }
 
-label {
-    font-weight: bold;
-}
+/* inventory list */
 
-input {
+.inventory-table {
     width: 100%;
-    margin-bottom: 10px;
-    padding: 8px;
+    border-collapse: collapse;
+    margin-bottom: 20px;
 }
 
-button {
+.inventory-table th, .inventory-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* align titles */
+.inventory-table td:nth-child(1) {
+    width: 50px;
+}
+.inventory-table td:nth-child(2) {
+    width: 200px;
+}
+
+/* Action buttons  */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+/* button formatting */
+
+.btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Colors */
+.btn-inc {
+    background: #28a745;
+    color: white;
+}
+
+.btn-dec {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-del {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.85;
+}
+
+/* add item */
+
+.add-item-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+input[type="text"], input[type="number"] {
     width: 100%;
     padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.add-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
-    font-size: 16px;
 }
 
-button:hover {
-    background: #0056b3;
+
+/* changing row, putting the two forms in the same section */
+.top-row {
+    display: flex;
+    gap: 20px;            /* spacing between the two cards */
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
+.card {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
