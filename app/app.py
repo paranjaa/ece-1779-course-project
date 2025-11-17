@@ -43,6 +43,13 @@ app = Flask(__name__)
 # Local development .env file
 if os.path.isfile("./.env"):
     load_dotenv()
+
+for secret_file in ["DB_NAME_FILE", "DB_USER_FILE", "DB_PASSWORD_FILE", "APP_SECRET_KEY_FILE"]:
+    if os.getenv(secret_file) is not None:
+        # using docker secrets in docker swarm instead of loading a .env context
+        with open(os.path.join("/run/secrets/", os.getenv(secret_file)), "r") as fh:
+            os.environ[secret_file.replace("_FILE","")] = fh.read()
+
 if os.getenv("APP_SECRET_KEY") is not None:
     app.secret_key = os.getenv("APP_SECRET_KEY")
 else:
