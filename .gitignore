@@ -2,3 +2,5 @@
 /venv/
 /.env
 app.js
+/app/build.sh
+/.secrets/
