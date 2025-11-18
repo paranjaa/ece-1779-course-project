@@ -1,0 +1,6 @@
+“Team 12 developed MealMap, a collaborative meal planning and grocery coordination app for housemates who cook together. Users can create shared weekly meal plans, assign cooking responsibilities, and automatically generate shopping lists. The application maintains shared state using PostgreSQL with persistent volumes, runs in containerized services managed through Kubernetes, and integrates provider monitoring tools to track resource usage. Our goal is to reduce coordination overhead for households and ensure that meal preparation is more organized and efficient across the week.”
+
+Team #26 developed _, a distributed inventory tracking system. _ is designed for businesses that require accurate, real time tracking of stock levels. _ uses a Python backend, and PostgreSQL with persistent volumes for user and inventory data. The system makes use of role-based access control to handle inventory access for different users. 
+
+Each component is containerized using Docker, and deployed using Docker Swarm on multiple DigitalOcean droplets. Finally, _ makes use of DigitalOcean's monitoring tools to evaluate system health and performance. Our goal is to improve operational efficency by providing a reliable alternative to manual inventory management.
+
