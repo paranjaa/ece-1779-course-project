@@ -1,0 +1,70 @@
+services:
+  app:
+    image: zeryllium/zeryllium-personal:ece1779-project-app
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME_FILE=/run/secrets/db_name
+      - DB_USER_FILE=/run/secrets/db_user
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - APP_SECRET_KEY_FILE=/run/secrets/app_secret_key
+    depends_on:
+      - db
+    networks:
+      - app-network
+    secrets:
+      - app_secret_key
+      - db_name
+      - db_user
+      - db_password
+  db:
+    image: postgres:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+      placement:
+        constraints:
+          - node.labels.volume == true
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/db_name
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - /mnt/volume_tor1_01/db_data:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$(cat $$POSTGRES_USER_FILE) -d $$(cat $$POSTGRES_DB_FILE)" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    secrets:
+      - db_name
+      - db_user
+      - db_password
+
+networks:
+  app-network:
+    driver: overlay
+
+secrets:
+  app_secret_key:
+    file: ./.secrets/.app_secret_key.txt
+  db_name:
+    file: ./.secrets/.db_name.txt
+  db_user:
+    file: ./.secrets/.db_user.txt
+  db_password:
+    file: ./.secrets/.db_password.txt
