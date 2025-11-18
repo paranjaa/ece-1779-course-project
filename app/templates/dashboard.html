@@ -2,95 +2,124 @@
 <html>
 <head>
     <title>Inventory Dashboard</title>
+
+<!-- not styling this on yet, was kind of a hassle-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+    
 </head>
 <body>
-    <h1>Inventory Dashboard</h1>
-
-    <h3> Change Sort Order </h3>
+    <h1 class="page-title">Inventory Dashboard</h1>
     
-    <form method="GET" action="{{ url_for('index') }}">
+    <!-- not styling this on yet, was kind of a hassle-->
 
-        <h4>Sort by:</h4>
-        {{ form.csrf_token }}
-        <label>
-            <input type="radio" name="sort_by" value="item_name" 
-                   {% if sort_by == 'item_name' %} checked {% endif %}>
-            Item Name
-        </label>
-        <label>
-            <input type="radio" name="sort_by" value="item_quantity" 
-                   {% if sort_by == 'item_quantity' %} checked {% endif %}>
-            Quantity
-        </label>
-        <label>
-            <input type="radio" name="sort_by" value="id" 
-                   {% if sort_by == 'id' %} checked {% endif %}>
-            ID
-        </label>
-        |
-        <label>
-            <input type="radio" name="order" value="asc" 
-                   {% if order == 'asc' %} checked {% endif %}>
-            Ascending
-        </label>
-        <label>
-            <input type="radio" name="order" value="desc" 
-                   {% if order == 'desc' %} checked {% endif %}>
-            Descending
-        </label>
+
+
+
+    <div class="top-row">
+      <div class="card add-item-container">
+        <h3>Add an item</h3>
+
+        <form method="POST" action="/add_item">
+              {{ form.csrf_token }}
+              <input type="text" name="item_name" placeholder="Item name" required>
+              <input type="number" name="item_quantity" placeholder="Quantity" required>
+              <input type="submit" value="Add Item">
+        </form>
+      </div>
+
+      <div class="card sort-container">
+        <h3> Change Sort Order </h3>
         
-        <input type="submit" value="Sort">
-    </form>
+        <form method="GET" action="{{ url_for('index') }}">
+
+            <p><strong>Sort by:</strong></p>
+            {{ form.csrf_token }}
+            <label>
+                <input type="radio" name="sort_by" value="item_name" 
+                      {% if sort_by == 'item_name' %} checked {% endif %}>
+                Item Name
+            </label>
+            <label>
+                <input type="radio" name="sort_by" value="item_quantity" 
+                      {% if sort_by == 'item_quantity' %} checked {% endif %}>
+                Quantity
+            </label>
+            <label>
+                <input type="radio" name="sort_by" value="id" 
+                      {% if sort_by == 'id' %} checked {% endif %}>
+                ID
+            </label>
+            
+            <p><strong>Direction:</strong></p>
+            <label>
+                <input type="radio" name="order" value="asc" 
+                      {% if order == 'asc' %} checked {% endif %}>
+                Ascending
+            </label>
+            <label>
+                <input type="radio" name="order" value="desc" 
+                      {% if order == 'desc' %} checked {% endif %}>
+                Descending
+            </label>
+            
+            <button class="btn" style="background:#007bff; color:white;">Sort</button>
+        </form>
+      </div>
+
+    </div>
+
 
 
 
     
 
+      
+    <div style="flex: 1;">
+      {% if items %}
+        <table class="inventory-table">
+            <tr>
+                <th>ID</th>
+                <th>Item Name</th>
+                <th>Quantity</th>
+            </tr>
 
-   {% if items %}
-          <table>
-              <tr>
-                  <th>ID</th>
-                  <th>Item Name</th>
-                  <th>Quantity</th>
-              </tr>
-              {% for id, name, quantity in items %}
-              <tr>
-                  <td>{{ id }}</td>
-                  <td>{{ name }}</td>
-                  <td>{{ quantity }}</td>
-                  <td>
-                      <form action="{{ url_for('increment', item_id=id) }}" method="post" style="display:inline;">
-                          <button type="submit">+</button>
-                          {{ form.csrf_token }} 
-                      </form>
-                      
-                      <form action="{{ url_for('decrement', item_id=id) }}" method="post" style="display:inline;">
-                        <button type="submit">-</button>
-                        {{ form.csrf_token }}
-                      </form>
-                      
-                      <form action="{{ url_for('delete_item', item_id=id) }}" method="post">
-                        <button type="submit">Delete</button>
-                        {{ form.csrf_token }}                    
-                      </form>
-                  </td>
-              </tr>
-              {% endfor %}
-          </table>
-  {% else %}
-        <p>No items found in inventory. :( </p>
-  {% endif %}
+            {% for id, name, quantity in items %}
+            <tr>
+                <td>{{ id }}</td>
+                <td>{{ name }}</td>
+                <td>{{ quantity }}</td>
+                <td>
+                    <form action="{{ url_for('increment', item_id=id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-inc">+</button>
+                        {{ form.csrf_token }} 
+                    </form>
+                    
+                    <form action="{{ url_for('decrement', item_id=id) }}" method="post" style="display:inline;">
+                      <button type="submit" class="btn btn-dec">-</button>
+                      {{ form.csrf_token }}
+                    </form>
+                    
+                    <form action="{{ url_for('delete_item', item_id=id) }}" method="post">
+                      <button type="submit" class="btn btn-del">Delete</button>
+                      {{ form.csrf_token }}                    
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
 
-  <h3>Add an item</h3>
+      {% else %}
+            <p>No items found in inventory. :( </p>
+      {% endif %}
 
-  <form method="POST" action="/add_item">
-        {{ form.csrf_token }}
-        <input type="text" name="item_name" placeholder="Item name" required>
-        <input type="number" name="item_quantity" placeholder="Quantity" required>
-        <input type="submit" value="Add Item">
-  </form>
+      
+    </div>
 
+
+
+
+
+<div class="card user-message">
 
   <p>Welcome {{session['role']}} {{ session['username'] }}<a href="{{ url_for('logout') }}"> Logout</a></p>
 
