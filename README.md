@@ -1,10 +1,18 @@
 # ece-1779-course-project
 Course project for Fall 2025 ECE 1779 (Intro to Cloud Computing) Course
 
-## Running this locally using Docker Compose 
-Run `docker compose up` to start the dockerized application and the database locally.
-
-Run `docker compose down --volumes` to stop the dockerized application and the database locally.
+## Running this locally using Docker Compose
+<b>Known Issue: </b>When running this locally, Prometheus and Grafana are both deployed successfully, however, Grafana is unable to access the Prometheus api endpoints.
+1. Set up a `.env` file with the following secrets filled:
+```text
+DB_HOST=
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
+DB_PORT=
+```
+2. Run `docker compose up` to start the dockerized application and the database locally.
+3. Run `docker compose down --volumes` to stop the dockerized application and the database locally.
 
 ## Running this on DigitalOcean using Docker Swarm
 
