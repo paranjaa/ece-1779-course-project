@@ -54,6 +54,33 @@ services:
       - db_name
       - db_user
       - db_password
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    deploy:
+      replicas: 1
+#      placement:
+#        constraints:
+#          - node.role == manager
+    ports:
+      - "3000:3000"
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+    extra_hosts:
+      - host.docker.internal:host-gateway
 
 networks:
   app-network:
