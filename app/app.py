@@ -13,6 +13,7 @@ from flask import session
 from flask import url_for
 from flask_wtf import CSRFProtect
 from markupsafe import escape
+from prometheus_flask_exporter import PrometheusMetrics
 
 from forms import EmptyForm
 from forms import LoginForm
@@ -40,6 +41,7 @@ dictConfig({
 })
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 # Local development .env file
 if os.path.isfile("./.env"):
     load_dotenv()
