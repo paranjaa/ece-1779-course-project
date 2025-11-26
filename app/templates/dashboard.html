@@ -3,18 +3,12 @@
 <head>
     <title>Inventory Dashboard</title>
 
-<!-- not styling this on yet, was kind of a hassle-->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
     
 </head>
 <body>
     <h1 class="page-title">Inventory Dashboard</h1>
     
-    <!-- not styling this on yet, was kind of a hassle-->
-
-
-
-
     <div class="top-row">
       <div class="card add-item-container">
         <h3>Add an item</h3>
@@ -61,6 +55,7 @@
                       {% if order == 'desc' %} checked {% endif %}>
                 Descending
             </label>
+            <br>
             
             <button class="btn" style="background:#007bff; color:white;">Sort</button>
         </form>
@@ -121,7 +116,8 @@
 
 <div class="card user-message">
 
-  <p>Welcome {{session['role']}} {{ session['username'] }}<a href="{{ url_for('logout') }}"> Logout</a></p>
+  <p>Welcome {{session['role']}} {{ session['username'] }}</p>
+  <button class="btn" style="background:#007bff; color:white;"><a href="{{ url_for('logout') }}"> Logout</a></button>
 
   {% if session['role'] == 'admin' %}
     <p>

@@ -92,7 +92,13 @@ body {
 
 .add-item-container {
     max-width: 400px;
-    margin: 0 auto;
+    /*margin: 0 auto;*/
+}
+
+/*adding an extra part so two cards scale more evenly */
+.top-row .card {
+    flex: 1;           
+    min-width: 300px;
 }
 
 input[type="text"], input[type="number"] {
@@ -126,4 +132,58 @@ input[type="text"], input[type="number"] {
     padding: 16px;
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.top-row .card {
+    flex: 1;
+    min-width: 350px;
+}
+
+
+
+/* Login Page */
+
+
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 60px;
+}
+
+.login-card {
+    width: 350px;
+    padding: 30px;
+}
+
+.login-form label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.login-btn {
+    width: 100%;
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.login-btn:hover {
+    opacity: 0.85;
 }
