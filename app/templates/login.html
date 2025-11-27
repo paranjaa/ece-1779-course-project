@@ -5,15 +5,24 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <h2>Login Page</h2>
-  <form method="post">
-    {{ form.csrf_token }}
-    <label>Username:</label>
-    {{ form.username }}<br>
-    <label>Password:</label>
-    {{ form.password }}<br>
-    <button type="submit">Login</button>
-  </form>
+
+  <h2 class="page-title">Login Page</h2>
+
+  <div class="login-wrapper">
+      <div class="card login-card">
+          <form method="post" class="login-form">
+            {{ form.csrf_token }}
+            <label>Username:</label>
+
+            {{ form.username }}<br>
+
+            <label>Password:</label>
+            {{ form.password }}<br>
+
+            <button type="submit"  class="btn login-btn">Login</button>
+          </form>
+      </div>
+  </div>
 
 
   {% with messages = get_flashed_messages(with_categories=true) %}
