@@ -1,11 +1,15 @@
+import datetime
 import os
 import secrets
+from functools import wraps
 from logging.config import dictConfig
 
+import jwt
 import psycopg
 from dotenv import load_dotenv
 from flask import Flask
 from flask import flash
+from flask import make_response
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -14,15 +18,13 @@ from flask import url_for
 from flask_wtf import CSRFProtect
 from markupsafe import escape
 from prometheus_flask_exporter import PrometheusMetrics
-
-from forms import EmptyForm
-from forms import LoginForm
-from forms import EnrollmentForm
-from utils import roles
-
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
-from functools import wraps
+
+from forms import EmptyForm
+from forms import EnrollmentForm
+from forms import LoginForm
+from utils import roles
 
 dictConfig({
     'version': 1,
@@ -74,11 +76,19 @@ def get_db_connection():
 def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # if that user isn't in the session, then kick them back to the login
-        if 'username' not in session:
-            # TODO: Make sure these messages are working, correctly?
+        token = request.cookies.get("jwt_token")
+
+        if not token:
             flash('Login is required for this page', 'info')
             return redirect(url_for('login'))
+
+        try:
+            data = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+            username = data["username"]
+        except:
+            flash('JWT Token is invalid', 'danger')
+            return redirect(url_for('login'))
+
         return f(*args, **kwargs)
 
     return decorated_function
@@ -90,10 +100,16 @@ def require_role(allowed_roles: list[roles]):
         @wraps(f)
         def decorated(*args, **kwargs):
             try:
-                if roles(session.get('role')) not in allowed_roles:
-                    return "Forbidden", 403
+                token = request.cookies.get("jwt_token")
+                data = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+                if roles(data["role"]) not in allowed_roles:
+                    flash("Cannot perform this action with the current user role")
+                    return redirect(url_for('index'))
+                    #return "Forbidden", 403
             except ValueError:
-                return "Forbidden", 403
+                flash("Cannot perform this action with the current user role")
+                return redirect(url_for('index'))
+                # return "Forbidden", 403
             return f(*args, **kwargs)
 
         return decorated
@@ -310,10 +326,22 @@ def login():
 
         if result and check_password_hash(result[0], password):
             app.logger.info(f"{result[1]} {username} logged in.")
+            token = jwt.encode(
+                {
+                    "username": username,
+                    "role": result[1],
+                    "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                },
+                app.secret_key,
+                algorithm="HS256"
+            )
             session['username'] = username
             session['role'] = result[1]
             flash("Login successful", "success")
-            return redirect(url_for("index"))
+
+            response = make_response(redirect(url_for("index")))
+            response.set_cookie("jwt_token", token)
+            return response
         else:
             app.logger.info("Failed login attempted.")
             flash("Invalid username or password", "danger")
@@ -436,8 +464,11 @@ def inventory():
 @app.route('/logout')
 def logout():
     session.clear()
+    response = make_response(redirect(url_for("index")))
+    # Remove the token by setting the expiry date in the past
+    response.set_cookie("jwt_token", expires=0)
     flash("Logged out successfully.", "info")
-    return redirect(url_for("index"))
+    return response
 
 
 if __name__ == '__main__':

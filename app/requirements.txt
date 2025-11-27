@@ -5,3 +5,4 @@ python-dotenv==1.2.1
 flask-wtf==1.2.2
 WTForms==3.2.1
 prometheus-flask-exporter==0.23.2
+PyJWT==2.10.1
