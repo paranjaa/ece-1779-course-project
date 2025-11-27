@@ -5,29 +5,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-    <h2 class="page-title">Enrollment Page</h2>
-
-
-    <div class="login-wrapper">
-        <div class="card login-card">
-            <form method="post"  class="login-form">
-                {{ form.csrf_token }}
-                <label>Username:</label><input type="text" name="username" required><br>
-                <label>Password:</label><input type="password" name="password" required><br>
-                <p>
-                    {{ form.role.label }}
-                    {{ form.role() }}
-                </p>
-                <button type="submit" class="btn login-btn">Enroll New User</button>
-            </form>
-
-        </div>
-    </div>
-
-
-
-
+    <h2>Enrollment Page</h2>
+    <form method="post">
+        {{ form.csrf_token }}
+        <label>Username:</label><input type="text" name="username" required><br>
+        <label>Password:</label><input type="password" name="password" required><br>
+        <p>
+            {{ form.role.label }}
+            {{ form.role() }}
+        </p>
+        <button type="submit">Sign Up</button>
+    </form>
     <p><a href="{{ url_for('index') }}">Back to Index</a></p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
