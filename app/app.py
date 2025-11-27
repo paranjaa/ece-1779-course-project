@@ -1,9 +1,10 @@
+import datetime
 import os
 import secrets
-import datetime
-import jwt
+from functools import wraps
 from logging.config import dictConfig
 
+import jwt
 import psycopg
 from dotenv import load_dotenv
 from flask import Flask
@@ -17,15 +18,13 @@ from flask import url_for
 from flask_wtf import CSRFProtect
 from markupsafe import escape
 from prometheus_flask_exporter import PrometheusMetrics
-
-from forms import EmptyForm
-from forms import LoginForm
-from forms import EnrollmentForm
-from utils import roles
-
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
-from functools import wraps
+
+from forms import EmptyForm
+from forms import EnrollmentForm
+from forms import LoginForm
+from utils import roles
 
 dictConfig({
     'version': 1,
