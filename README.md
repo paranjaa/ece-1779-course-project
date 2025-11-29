@@ -244,14 +244,14 @@ After logging in, you may perform CRUD actions (Create and Delete only if your u
 /logout
 ```
 
-You can access Prometheus metrics via the manager node `<manager_droplet_ipv4>:9090`.
+You can access Prometheus metrics via any node `<droplet_ipv4>:9090`. This service is always running on the manager node
 
-You can additionally access the Grafana dashboards by accessing the node it is running on `<droplet_ipv4>:3000`. Because of the way these services are load balanced by Docker Swarm, it is highly likely that Grafana is running on the non-manager node.
+You can additionally access the Grafana dashboards by accessing any node `<droplet_ipv4>:3000`. Because of the way these services are load balanced by Docker Swarm, it is highly likely that Grafana is running on a non-manager node.
 
 ## Deployment Information
 The live service can be accessed at http://147.182.153.38:5000
 
-The Grafana dashboard can be accessed at http://138.197.145.187:3000
+The Grafana dashboard can be accessed at http://147.182.153.38:3000
 
 ## Individual Contributions
 | David Zhang                                                                               | Alok Paranjape     |
