@@ -249,9 +249,9 @@ You can access Prometheus metrics via any node `<droplet_ipv4>:9090`. This servi
 You can additionally access the Grafana dashboards by accessing any node `<droplet_ipv4>:3000`. Because of the way these services are load balanced by Docker Swarm, it is highly likely that Grafana is running on a non-manager node.
 
 ### Setting up SQL database backups
-Backups are handled using a bash script that dumps the SQL database, which then uses rclone to sync with an online database. It can work with other cloud storage, but this setup is for Google Drive, and also needs a local computer running rclone to authenticate it.
+Backups are handled using a bash script that dumps the SQL database, which then uses rclone to sync with an online database. It can work with other cloud storage, but this setup is for Google Drive (in a dedicated folder), and also needs a local computer running rclone to authenticate it.
 
-SSH into Droplet-1 (with the SQL database) and install rclone. To authenticate, you'll also need to install it on another computer, where you've signed into google. (https://rclone.org/downloads/)
+SSH into Droplet-1 (with the SQL database) and install rclone. To authenticate, you'll also need to install it (https://rclone.org/downloads/) on another computer, where you've signed into google. 
 ```
 curl https://rclone.org/install.sh | sudo bash
 ```
@@ -259,7 +259,7 @@ After that, set up the config for remote access, hit n to start making a new rem
 ```
 rclone config
 ```
-Most of the steps in config can be left blank by hitting enter, here's a list 
+Most of the steps in config can be left blank by hitting enter, here's an initial list 
 - name: gdrive
 - Storage: drive
 - client_id: (Blank)
@@ -269,7 +269,7 @@ Most of the steps in config can be left blank by hitting enter, here's a list
 
 After those, hit (y) to enter advanced config. To put the backups in a particular folder on your google drive instead of the root, put the folder's address in, from part of the URL. https://drive.google.com/drive/folders/\[This part of the URL]
 - Every other option in advanced config (Blank)
-- root\_folder_id: (That particular part of the URL)
+- root\_folder_id: (Paste in that particular part of the Drive folder URL)
 
 It'll if you want to edit the advanced config again, hit (n) to move on. 
 Next, for web browser authentication, hit (n), since it needs a web browser. 
@@ -283,11 +283,45 @@ Paste the section between the arrows back in the droplet.
 ```
 NOTICE: Got code
 Paste the following into your remote machine --->
-(an even longer sequence of unique characters)
+(an even longer sequence of characters)
 <---End paste
+```
 
+Now that the remote database is set up, install postgres client in order to dump the database.
+```
+apt install postgresql-client-common
+```
+
+Make a new directory for the backups to be stored and move to it 
 
 ```
+mkdir /opt/db\_backups/ && cd /opt/db_backups/
+```
+Create a file for the bash script, and paste in the contents of backup.sh from the repository.
+Note that it makes use of the .secret files for accessing the database, 
+as well as running on postgres's docker container. Save the script, and close Nano.
+```
+nano backup.sh
+```
+Run backup.sh to test the script. You should get a .sql file in the local directory,
+as well as a copy on the Google Drive folder, which you can also see with the second command.
+```
+bash backup.sh
+rclone ls gdrive:
+```
+Finally, to set up automatic backups, open up crontab
+```
+sudo crontab -e
+```
+Add the line below to the end of the crontab file. Save and close the file.
+After doing that, backups will be enabled, and will run every night at 3AM.
+```
+0 3 * * * /opt/db_backups/backup.sh >> /opt/db_backups/backup.log 2>&1
+```
+
+### Restoring the database
+TBA
+
 
 
 
