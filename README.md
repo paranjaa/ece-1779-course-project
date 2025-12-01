@@ -248,6 +248,52 @@ You can access Prometheus metrics via any node `<droplet_ipv4>:9090`. This servi
 
 You can additionally access the Grafana dashboards by accessing any node `<droplet_ipv4>:3000`. Because of the way these services are load balanced by Docker Swarm, it is highly likely that Grafana is running on a non-manager node.
 
+### Setting up SQL database backups
+Backups are handled using a bash script that dumps the SQL database, which then uses rclone to sync with an online database. It can work with other cloud storage, but this setup is for Google Drive, and also needs a local computer running rclone to authenticate it.
+
+SSH into Droplet-1 (with the SQL database) and install rclone. To authenticate, you'll also need to install it on another computer, where you've signed into google. (https://rclone.org/downloads/)
+```
+curl https://rclone.org/install.sh | sudo bash
+```
+After that, set up the config for remote access, hit n to start making a new remote
+```
+rclone config
+```
+Most of the steps in config can be left blank by hitting enter, here's a list 
+- name: gdrive
+- Storage: drive
+- client_id: (Blank)
+- client_secret: (Blank)
+- option_scope: 1
+- service\_account_file: (Blank)
+
+After those, hit (y) to enter advanced config. To put the backups in a particular folder on your google drive instead of the root, put the folder's address in, from part of the URL. https://drive.google.com/drive/folders/\[This part of the URL]
+- Every other option in advanced config (Blank)
+- root\_folder_id: (That particular part of the URL)
+
+It'll if you want to edit the advanced config again, hit (n) to move on. 
+Next, for web browser authentication, hit (n), since it needs a web browser. 
+On your local machine, copy and run the authorization command:   
+```
+rclone authorize "drive"  "(series of unique chararacters)" 
+```
+A google authorization request should open in your web browser, so authorize rclone to access your google drive.
+Underneath the authorization command on your local machine, you should get a config token like this. 
+Paste the section between the arrows back in the droplet.
+```
+NOTICE: Got code
+Paste the following into your remote machine --->
+(an even longer sequence of unique characters)
+<---End paste
+
+
+```
+
+
+
+
+
+
 ## Deployment Information
 The live service can be accessed at http://147.182.153.38:5000
 
