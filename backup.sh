@@ -1,64 +1,60 @@
 #!/bin/bash
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
-#set up variables first
+# get these from the .secret files, was hardcoded before
+DB_NAME=$(cat /root/.secrets/.db_name.txt)
+DB_USER=$(cat /root/.secrets/.db_user.txt)
+DB_PASSWORD=$(cat /root/.secrets/.db_password.txt)
 
+echo "Backup started at $(date)"
+whoami
+pwd
+
+
+
+#echo "Backing up database"
+
+
+echo "Checking docker container before backup"
+#get the name of the container that's running postgres
+CONTAINER=$(docker ps --filter "name=ece1779-project_db" --format "{{.Names}}" | head -n 1)
+
+#container is empty, there's probably bigger problems
+if [[ -z "$CONTAINER" ]]; then
+  echo "ERROR: Could not find a running DB container with name containing 'ece1779-project_db'"
+  exit 1
+fi
+
+echo "Found docker conainter at : ${CONTAINER}"
+
+#this should match the name of the rclone remote setup
 RCLONE_REMOTE="gdrive"
+#since the remote directory is set in that config, keep this blank
+REMOTE_DIR=""
+
+
+
 LOCAL_BACKUP_DIR="/opt/db_backups"
-DB_NAME=$(cat ~/.secrets/.db_name.txt)
-DB_USER=$(cat ~/.secrets/.db_user.txt)
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+BACKUP_FILE_NAME="${DB_NAME}_${DATE}.sql"
+COMPRESSED_FILE="${BACKUP_FILE_NAME}.gz"
 
 
-#Find the DB container to run the postgres commands on
-DB_CONTAINER=$(docker ps --filter "name=ece1779-project_db" --format "{{.Names}}" | head -n 1)
-if [[ -z "$DB_CONTAINER" ]]; then
-  echo "error, couldn't find a running DB container with name: ece1779-project_db"
-  echo "verify docker setup and droplet "
-  exit 1
-fi
+echo "Dumping SQL database at ${LOCAL_BACKUP_DIR}/${BACKUP_FILE_NAME}"
+docker exec "$CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" > "${LOCAL_BACKUP_DIR}/${BACKUP_FILE_NAME}"
 
-echo "Using DB container: $DB_CONTAINER"
+echo "Compressing Local Copy at ${LOCAL_BACKUP_DIR}:/${BACKUP_FILE_NAME}"
+gzip "${LOCAL_BACKUP_DIR}/${BACKUP_FILE_NAME}"
 
-#get the latest backupfile from the remote directory
-LATEST_BACKUP=$(rclone ls "$RCLONE_REMOTE:" --fast-list | awk '{print $2}' | sort | grep "${DB_NAME}_" | tail -n 1)
-if [[ -z "$LATEST_BACKUP" ]]; then
-  echo "error, couldn't find a backup file, like ${DB_NAME}_timestamp"
-  echo "check remote directory and rclone config"
-  exit 1
-fi
+#move  the copy to the remote directory
+echo "Copying backup file to remote directory, at ${RCLONE_REMOTE}, ${REMOTE_DIR}"
+rclone copy "${LOCAL_BACKUP_DIR}/${COMPRESSED_FILE}" "${RCLONE_REMOTE}:${REMOTE_DIR}"
 
+#delete local backups that are older than 7 days
+echo "Deleting week old backup files"
+find "$LOCAL_BACKUP_DIR" -name "${DB_NAME}_*.gz" -type f -mtime +7 -delete
 
-echo "Found latest backup at $LATEST_BACKUP, downloading"
+echo "Database backup complete"
 
-rclone copy "$RCLONE_REMOTE:$LATEST_BACKUP" "$LOCAL_BACKUP_DIR/"
-
-LOCAL_FILE="$LOCAL_BACKUP_DIR/$(basename "$LATEST_BACKUP")"
-echo "Downloaded to: ${LOCAL_FILE}"
-
-gzip -df "${LOCAL_FILE}"
-
-SQL_FILE="${LOCAL_FILE%.gz}"
-
-echo "Decompressed to sql file: ${SQL_FILE}"
-
-read -p "Can you confirm restoring that ^ backup file? It will erase and replace the current '${DB_NAME}' database. (yes/no): " confirm
-if [[ "$confirm" != "yes" ]]; then
-    echo "Cancelling restoration script, "
-    exit 0
-fi
-
-echo "Confirmed, restoring database to that backup"
-
-echo "Verifying DB connection again..."
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "\l" > /dev/null
-echo "Connection OK"
-
-echo "Dropping existing database: ${DB_NAME}"
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS ${DB_NAME};"
-
-echo "Creating new database: ${DB_NAME}"
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE ${DB_NAME};"
-
-echo "Applying backup to database..."
-docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" < "${SQL_FILE}"
-
-echo "Database Restoration complete"
+#probably would need a deletion for remote files, not going to come up in this timeframe though
+#rclone delete --min-age 30d "${RCLONE_REMOTE}:${REMOTE_DIR}"
