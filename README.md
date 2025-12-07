@@ -315,27 +315,30 @@ as well as a copy on the Google Drive folder, which you can also see with the se
 bash backup.sh
 rclone ls gdrive:
 ```
-To set up automatic backups, open up crontab, and add a job to it
+To set up automatic backups, open up crontab
 ```
 sudo crontab -e
 ```
-Add the line below to the end of the crontab file. Save and close the cron file.
+At the top of the crontab file, add in this in, it's  PATH so cron can run the bash scripts and use rclone and docker commands
+```
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+Add the line below to the end of the crontab file. Save and close nano.
 ```
 0 3 * * * /opt/db_backups/backup.sh >> /opt/db_backups/backup_output.log 2>> /opt/db_backups/backup_error.log
 ```
-Finally, add files that cron will write into, one for logging and another for errors
 
+Finally, add files that cron will write into, one for logging and another for errors
 ```
 touch backup_error.log && touch backup_output.log
 ```
 
-Just in case, you can also set the files as and directory as executable, so cron can run them.
+You should also set the files as and directory as executable, so cron can run them.
 On a ls -l, they should show up a(-rwxr-xr-x 1 root root ...),and probably will be green in a terminal
 ```
 chmod +x /opt/db_backups/backup.sh
 chmod +x /opt/db_backups/restore.sh
 ```
-
 
 ### Restoring the database (Also manually calling the backup script)
 After all that setup, setting up restoring the database isn't that much. Just cd into the folder
