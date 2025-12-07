@@ -55,6 +55,9 @@ Simply login to the service and you will be presented with the inventory display
 
 For analyzing the Python backend metrics, log in to the Grafana endpoint http://138.197.145.187:3000 and observe the dashboard provided.
 
+## Video Demo
+https://youtu.be/vP2VWHbQVCM
+
 ## Development Guide
 ### Running this locally using Docker Compose
 <b>Known Issue: </b>When running this locally, Prometheus and Grafana are both deployed successfully, however, Grafana is unable to access the Prometheus api endpoints.
