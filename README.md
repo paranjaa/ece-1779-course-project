@@ -267,15 +267,15 @@ After that, set up the config for remote access, hit n to start making a new rem
 ```
 rclone config
 ```
-Most of the steps in config can be left blank by hitting enter, here's an initial list 
+Most of the steps in config can be left blank by hitting enter, here's what to do for the inital set:
 - name: gdrive
 - Storage: drive
 - client_id: (Blank)
 - client_secret: (Blank)
 - option_scope: 1
-- service\_account_file: (Blank)
+- service_account_file: (Blank)
 
-After those, hit (y) to enter advanced config. To put the backups in a particular folder on your google drive instead of the root, put the folder's address in, from part of the URL. https://drive.google.com/drive/folders/\[This part of the URL]
+After those, hit (y) to enter advanced config. To put the backups in a particular folder on your google drive instead of the root, put the folder's address in, from part of the URL. https://drive.google.com/drive/folders/[This part of the URL]
 - Every other option in advanced config other than root\_folder_id (Blank)
 - root\_folder_id: (Paste in that particular part of the Drive folder URL)
 
@@ -286,8 +286,8 @@ On your local machine, copy and run the authorization command:
 rclone authorize "drive"  "(series of unique chararacters)" 
 ```
 A google authorization request should open in your web browser, so authorize rclone to access your google drive.
-(Those are managed under My Account > Security & Sign-in, then under connections to third party apps, for cancelling it)
-Underneath the authorization command on your local machine, you should get a config token like this. 
+(Those are managed under My Account > Security & Sign-in, then under connections to third party apps, if you want to disconnect it)
+Underneath the authorization command on your local machine, you should get a config token like this:
 Paste the section between the arrows back in the droplet.
 ```
 NOTICE: Got code
@@ -304,7 +304,7 @@ apt install postgresql-client-common
 Make a new directory for the backups to be stored and move to it 
 
 ```
-mkdir /opt/db\_backups/ && cd /opt/db_backups/
+mkdir /opt/db_backups/ && cd /opt/db_backups/
 ```
 Create a file for the bash script, and paste in the contents of backup.sh from the repository.
 Note that it makes use of the .secret files for accessing the database, 
@@ -322,11 +322,12 @@ To set up automatic backups, open up crontab
 ```
 sudo crontab -e
 ```
-At the top of the crontab file, add in this in, it's  PATH so cron can run the bash scripts and use rclone and docker commands
+At the top of the crontab file, add in this in, it's PATH so cron can run the bash scripts and use rclone and docker commands
 ```
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ```
-Add the line below to the end of the crontab file. Save and close nano.
+Add the line below to the end of the crontab file to schedule it running once a day (at 10PM). Save and close nano.
+(If you want to test the automatic backups faster, you can replace the 0 and 3 with asterisks, it'll run every minute)
 ```
 0 3 * * * /opt/db_backups/backup.sh >> /opt/db_backups/backup_output.log 2>> /opt/db_backups/backup_error.log
 ```
@@ -357,12 +358,10 @@ To run the script, call it using bash. It'll automatically check the remote dire
 ```
 bash restore.sh
 ```
-
 You can also manually run the backup script in a similar fashion from /opt/db_backups/
 ```
 bash backup.sh
 ```
-
 
 ## Deployment Information
 The live service can be accessed at http://147.182.153.38:5000
